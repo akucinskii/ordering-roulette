@@ -78,8 +78,9 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
 
     const x = centerX + (wheelRadius / 1.3) * Math.sin(textAngle);
     const y = centerY - (wheelRadius / 1.3) * Math.cos(textAngle);
+    const rotation = (textAngle * 180) / Math.PI - 90; // Convert radians to degrees and adjust
 
-    return { x, y };
+    return { x, y, rotation };
   };
 
   const partitions = new Array(numberOfPartitions).fill(null);
@@ -99,22 +100,36 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
       ) : (
         <Text>{`You won prize ${whichIndexWon}!`}</Text>
       )}
-      <View>
+      <View
+        style={{
+          position: "relative",
+          width: wheelSize,
+          height: wheelSize,
+        }}
+      >
         <Svg
-          height={100}
-          width={100}
+          height={20}
+          width={20}
           style={{
+            transform: [
+              {
+                translateX: -10,
+              },
+              {
+                translateY: -10,
+              },
+            ],
             position: "absolute",
             zIndex: 1,
-            left: "75%",
-            top: "45%",
+            left: "100%",
+            top: "50%",
           }}
         >
           <Polygon
-            points={`0,15 20,20 20,10`}
-            fill="black"
+            points={`0,10 20,20 20,0`}
+            fill="white"
             stroke="black"
-            strokeWidth="1"
+            strokeWidth="3"
           />
         </Svg>
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
@@ -124,15 +139,17 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
                 key={index}
                 d={calculatePartitionPath(index)}
                 fill={`hsl(${index * arcOfOnePartition}, 90%, 50%)`}
+                stroke={"black"}
               />
             ))}
             {partitions.map((_, index) => {
-              const { x, y } = calculateTextPosition(index);
+              const { x, y, rotation } = calculateTextPosition(index);
               return (
                 <SvgText
                   key={index}
                   x={x}
                   y={y}
+                  transform={`rotate(${rotation}, ${x}, ${y})`}
                   fill="black"
                   fontSize={
                     numberOfPartitions > 10 ? 10 : 20 - numberOfPartitions

@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, TouchableOpacity, Animated, Easing, Text } from "react-native";
 import Svg, { Path, Polygon, Text as SvgText } from "react-native-svg";
+import io from "socket.io-client";
 
 const DEFAULT_SPIN_VALUE = 360 * 3;
+const socket = io("http://localhost:3000");
 
 const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
   const arcOfOnePartition = useMemo(
@@ -14,35 +16,28 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
   const [whichIndexWon, setWhichIndexWon] = useState(0);
   const [randomNumber, setRandomNumber] = useState(0);
 
-  const spinWheel = () => {
-    const winner = Math.floor(Math.random() * numberOfPartitions);
-    setWhichIndexWon(winner);
+  useEffect(() => {
+    socket.on("winnerData", (data) => {
+      setWhichIndexWon(data.winner);
+      setRandomNumber(data.randomNumber);
 
-    spinValue.setValue(0);
-    Animated.timing(spinValue, {
-      toValue: 1,
-      duration: 5000, // Adjust the duration as needed
-      easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  };
+      spinValue.setValue(0);
+      Animated.timing(spinValue, {
+        toValue: 1,
+        duration: 5000,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      socket.off("winnerData");
+    };
+  }, []);
 
   const startLottery = () => {
-    const randomNumber = Math.random() * 360;
-    console.log("randomNumber", randomNumber);
-    setRandomNumber(randomNumber);
-    const winner = Math.ceil(randomNumber / arcOfOnePartition);
-    console.log("winner", winner);
-
-    setWhichIndexWon(winner);
-
-    spinValue.setValue(0);
-    Animated.timing(spinValue, {
-      toValue: 1,
-      duration: 5000, // Adjust the duration as needed
-      easing: Easing.inOut(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
+    // Send an event to the server to start the lottery
+    socket.emit("startLottery");
   };
 
   const spin = spinValue.interpolate({

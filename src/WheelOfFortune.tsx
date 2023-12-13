@@ -6,14 +6,15 @@ import io from "socket.io-client";
 const DEFAULT_SPIN_VALUE = 360 * 3;
 const socket = io("http://localhost:3000");
 
-const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
-  const arcOfOnePartition = useMemo(
-    () => 360 / numberOfPartitions,
-    [numberOfPartitions]
-  );
+const WheelOfFortune = () => {
   const [spinValue] = useState(new Animated.Value(0));
 
   const [whichIndexWon, setWhichIndexWon] = useState(0);
+  const [numberOfPartitions, setNumberOfPartitions] = useState(1);
+  const [roomName, setRoomName] = useState<string>("");
+
+  const arcOfOnePartition = useMemo(() => 360 / numberOfPartitions, [numberOfPartitions]);
+
   const [randomNumber, setRandomNumber] = useState(0);
 
   useEffect(() => {
@@ -30,14 +31,38 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
       }).start();
     });
 
+    // Listen for room size response
+    socket.on("roomSize", (size) => {
+      console.log(`Number of clients in the room: ${size}`);
+      setNumberOfPartitions(size);
+    });
+
+    socket.on("roomJoined", (roomName) => {
+      console.log(`Joined room ${roomName}`);
+      setRoomName(roomName);
+    });
+
+    socket.on("userJoined", (size) => {
+      console.log(`Number of clients in the room: ${size}`);
+      setNumberOfPartitions(size);
+    });
+
     return () => {
       socket.off("winnerData");
+      socket.off("roomSize");
+      socket.off("roomJoined");
+      socket.off("userJoined");
     };
   }, []);
 
   const startLottery = () => {
     // Send an event to the server to start the lottery
-    socket.emit("startLottery");
+    socket.emit("startLottery", roomName);
+  };
+
+  const joinRoom = () => {
+    console.log("Joining room");
+    socket.emit("joinRoom", "roomName2");
   };
 
   const spin = spinValue.interpolate({
@@ -89,6 +114,9 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
         position: "relative",
       }}
     >
+      <TouchableOpacity onPress={joinRoom}>
+        <Text>Join room</Text>
+      </TouchableOpacity>
       <Text> {360 / numberOfPartitions}</Text>
       {whichIndexWon === 0 ? (
         <Text>Spin the wheel to win a prize!</Text>
@@ -120,12 +148,7 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
             top: "50%",
           }}
         >
-          <Polygon
-            points={`0,10 20,20 20,0`}
-            fill="white"
-            stroke="black"
-            strokeWidth="3"
-          />
+          <Polygon points={`0,10 20,20 20,0`} fill="white" stroke="black" strokeWidth="3" />
         </Svg>
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
           <Svg height={wheelSize} width={wheelSize}>
@@ -146,9 +169,7 @@ const WheelOfFortune = ({ numberOfPartitions = 19 }) => {
                   y={y}
                   transform={`rotate(${rotation}, ${x}, ${y})`}
                   fill="black"
-                  fontSize={
-                    numberOfPartitions > 10 ? 10 : 20 - numberOfPartitions
-                  }
+                  fontSize={numberOfPartitions > 10 ? 10 : 20 - numberOfPartitions}
                   textAnchor="middle"
                 >
                   {`Prize ${index + 1}`}

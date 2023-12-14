@@ -1,17 +1,28 @@
+import { RouteProp } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useMemo, useState } from "react";
 import { View, TouchableOpacity, Animated, Easing, Text } from "react-native";
 import Svg, { Path, Polygon, Text as SvgText } from "react-native-svg";
 import io from "socket.io-client";
+import { RootStackParamList } from "../types";
 
 const DEFAULT_SPIN_VALUE = 360 * 3;
 const socket = io("http://localhost:3000");
 
-const WheelOfFortune = () => {
+type WheelOfFortuneNavigationProp = NativeStackNavigationProp<RootStackParamList, "Room">;
+
+const WheelOfFortune = ({
+  route: {
+    params: { room },
+  },
+}: {
+  route: RouteProp<RootStackParamList, "WheelOfFortune">;
+  navigation: WheelOfFortuneNavigationProp;
+}) => {
   const [spinValue] = useState(new Animated.Value(0));
 
   const [whichIndexWon, setWhichIndexWon] = useState(0);
   const [numberOfPartitions, setNumberOfPartitions] = useState(1);
-  const [roomName, setRoomName] = useState<string>("");
 
   const arcOfOnePartition = useMemo(() => 360 / numberOfPartitions, [numberOfPartitions]);
 
@@ -39,7 +50,6 @@ const WheelOfFortune = () => {
 
     socket.on("roomJoined", (roomName) => {
       console.log(`Joined room ${roomName}`);
-      setRoomName(roomName);
     });
 
     socket.on("userJoined", (size) => {
@@ -57,13 +67,17 @@ const WheelOfFortune = () => {
 
   const startLottery = () => {
     // Send an event to the server to start the lottery
-    socket.emit("startLottery", roomName);
+    socket.emit("startLottery", room);
   };
 
   const joinRoom = () => {
     console.log("Joining room");
-    socket.emit("joinRoom", "roomName2");
+    socket.emit("joinRoom", room);
   };
+
+  useEffect(() => {
+    joinRoom();
+  }, []);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],
@@ -114,10 +128,7 @@ const WheelOfFortune = () => {
         position: "relative",
       }}
     >
-      <TouchableOpacity onPress={joinRoom}>
-        <Text>Join room</Text>
-      </TouchableOpacity>
-      <Text> {360 / numberOfPartitions}</Text>
+      <Text>Room {room}</Text>
       {whichIndexWon === 0 ? (
         <Text>Spin the wheel to win a prize!</Text>
       ) : (

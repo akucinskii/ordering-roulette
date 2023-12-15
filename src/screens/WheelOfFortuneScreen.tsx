@@ -5,6 +5,7 @@ import { View, TouchableOpacity, Animated, Easing, Text } from "react-native";
 import Svg, { Path, Polygon, Text as SvgText } from "react-native-svg";
 import io from "socket.io-client";
 import { RootStackParamList } from "../types";
+import { getData } from "../utils/storage";
 
 const DEFAULT_SPIN_VALUE = 360 * 3;
 const socket = io("http://localhost:3000");
@@ -20,11 +21,12 @@ const WheelOfFortune = ({
   navigation: WheelOfFortuneNavigationProp;
 }) => {
   const [spinValue] = useState(new Animated.Value(0));
+  const [showWinner, setShowWinner] = useState(false);
 
   const [whichIndexWon, setWhichIndexWon] = useState(0);
-  const [numberOfPartitions, setNumberOfPartitions] = useState(1);
+  const [partitions, setPartitions] = useState([]);
 
-  const arcOfOnePartition = useMemo(() => 360 / numberOfPartitions, [numberOfPartitions]);
+  const arcOfOnePartition = useMemo(() => 360 / partitions.length, [partitions]);
 
   const [randomNumber, setRandomNumber] = useState(0);
 
@@ -40,28 +42,20 @@ const WheelOfFortune = ({
         easing: Easing.inOut(Easing.cubic),
         useNativeDriver: true,
       }).start();
+
+      setTimeout(() => {
+        setShowWinner(true);
+      }, 5000);
     });
 
     // Listen for room size response
-    socket.on("roomSize", (size) => {
-      console.log(`Number of clients in the room: ${size}`);
-      setNumberOfPartitions(size);
-    });
-
-    socket.on("roomJoined", (roomName) => {
-      console.log(`Joined room ${roomName}`);
-    });
-
-    socket.on("userJoined", (size) => {
-      console.log(`Number of clients in the room: ${size}`);
-      setNumberOfPartitions(size);
+    socket.on("updateUserList", (data) => {
+      setPartitions(data);
     });
 
     return () => {
       socket.off("winnerData");
-      socket.off("roomSize");
-      socket.off("roomJoined");
-      socket.off("userJoined");
+      socket.off("updateUserList");
     };
   }, []);
 
@@ -70,9 +64,13 @@ const WheelOfFortune = ({
     socket.emit("startLottery", room);
   };
 
-  const joinRoom = () => {
-    console.log("Joining room");
-    socket.emit("joinRoom", room);
+  const joinRoom = async () => {
+    const username = await getData("username");
+    console.log(room, username);
+    socket.emit("joinRoom", {
+      room,
+      username,
+    });
   };
 
   useEffect(() => {
@@ -90,11 +88,11 @@ const WheelOfFortune = ({
   const centerY = wheelRadius;
 
   const calculatePartitionPath = (index: number) => {
-    if (numberOfPartitions === 1) {
+    if (partitions.length === 1) {
       // return whole circle
       return `M${centerX},${centerY} m${-wheelRadius},0 a${wheelRadius},${wheelRadius} 0 1,0 ${wheelSize},0 a${wheelRadius},${wheelRadius} 0 1,0 ${-wheelSize},0`;
     }
-    const angle = (2 * Math.PI) / numberOfPartitions;
+    const angle = (2 * Math.PI) / partitions.length;
     const startAngle = index * angle;
     const endAngle = startAngle + angle;
 
@@ -107,7 +105,7 @@ const WheelOfFortune = ({
   };
 
   const calculateTextPosition = (index: number) => {
-    const angle = (2 * Math.PI) / numberOfPartitions;
+    const angle = (2 * Math.PI) / partitions.length;
     const textAngle = index * angle + angle / 2;
 
     const x = centerX + (wheelRadius / 1.3) * Math.sin(textAngle);
@@ -116,8 +114,6 @@ const WheelOfFortune = ({
 
     return { x, y, rotation };
   };
-
-  const partitions = new Array(numberOfPartitions).fill(null);
 
   return (
     <View
@@ -132,7 +128,7 @@ const WheelOfFortune = ({
       {whichIndexWon === 0 ? (
         <Text>Spin the wheel to win a prize!</Text>
       ) : (
-        <Text>{`You won prize ${whichIndexWon}!`}</Text>
+        showWinner && <Text>{partitions[whichIndexWon - 1]} is the winner!</Text>
       )}
       <View
         style={{
@@ -171,7 +167,7 @@ const WheelOfFortune = ({
                 stroke={"black"}
               />
             ))}
-            {partitions.map((_, index) => {
+            {partitions.map((username, index) => {
               const { x, y, rotation } = calculateTextPosition(index);
               return (
                 <SvgText
@@ -180,10 +176,10 @@ const WheelOfFortune = ({
                   y={y}
                   transform={`rotate(${rotation}, ${x}, ${y})`}
                   fill="black"
-                  fontSize={numberOfPartitions > 10 ? 10 : 20 - numberOfPartitions}
+                  fontSize={partitions.length > 10 ? 10 : 20 - partitions.length}
                   textAnchor="middle"
                 >
-                  {`Prize ${index + 1}`}
+                  {username}
                 </SvgText>
               );
             })}

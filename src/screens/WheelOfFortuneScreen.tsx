@@ -1,13 +1,15 @@
 import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useMemo, useState } from "react";
-import { View, TouchableOpacity, Animated, Easing, Text } from "react-native";
+import { View, TouchableOpacity, Animated, Easing, Text, Share, Alert } from "react-native";
+import { Button, Heading } from "native-base";
 import Svg, { Path, Polygon, Text as SvgText } from "react-native-svg";
 import io from "socket.io-client";
 import { RootStackParamList } from "../types";
 import { getData } from "../utils/storage";
 
 const DEFAULT_SPIN_VALUE = 360 * 3;
+const MESSAGE = "Join room to play the Wheel of Fortune! Copy and paste this code to join: {CODE}";
 const socket = io("http://localhost:3000");
 
 type WheelOfFortuneNavigationProp = NativeStackNavigationProp<RootStackParamList, "Room">;
@@ -115,6 +117,33 @@ const WheelOfFortune = ({
     return { x, y, rotation };
   };
 
+  const onShare = async () => {
+    try {
+      const result = await Share.share({
+        message: MESSAGE.replace("{CODE}", room),
+      });
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+        } else {
+          // shared
+        }
+      } else if (result.action === Share.dismissedAction) {
+        // dismissed
+      }
+    } catch (error: any) {
+      Alert.alert(error.message);
+    }
+  };
+
+  if (showWinner) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Heading>{partitions[whichIndexWon - 1]} is the winner!</Heading>
+      </View>
+    );
+  }
+
   return (
     <View
       style={{
@@ -122,14 +151,38 @@ const WheelOfFortune = ({
         justifyContent: "center",
         alignItems: "center",
         position: "relative",
+        gap: 20,
       }}
     >
-      <Text>Room {room}</Text>
-      {whichIndexWon === 0 ? (
-        <Text>Spin the wheel to win a prize!</Text>
-      ) : (
-        showWinner && <Text>{partitions[whichIndexWon - 1]} is the winner!</Text>
-      )}
+      <View
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          width: "100%",
+        }}
+      >
+        <View
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <Heading>Room: #{room}</Heading>
+          <Button onPress={onShare} variant="ghost">
+            Copy Code
+          </Button>{" "}
+        </View>
+        {whichIndexWon === 0 ? (
+          <Heading size="md">Spin the wheel to win a prize!</Heading>
+        ) : (
+          showWinner && <Text>{partitions[whichIndexWon - 1]} is the winner!</Text>
+        )}
+      </View>
       <View
         style={{
           position: "relative",

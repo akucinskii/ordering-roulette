@@ -172,6 +172,7 @@ const WheelOfFortune = ({
               return (
                 <SvgText
                   key={index}
+                  fontFamily="Arial"
                   x={x}
                   y={y}
                   transform={`rotate(${rotation}, ${x}, ${y})`}

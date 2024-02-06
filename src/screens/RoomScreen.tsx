@@ -1,13 +1,15 @@
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
-import { Button, Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 import { generateCode } from "../utils/generateCode";
 import { RootStackParamList } from "../types";
+import { Button, FormControl, Input, Text } from "native-base";
 
 type RoomScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Room">;
 
 const RoomScreen = ({ navigation }: { navigation: RoomScreenNavigationProp }) => {
   const [roomCode, setRoomCode] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const handleCreateRoom = () => {
     const code = generateCode();
@@ -16,6 +18,10 @@ const RoomScreen = ({ navigation }: { navigation: RoomScreenNavigationProp }) =>
   };
 
   const handleJoinRoom = () => {
+    if (roomCode.length !== 6) {
+      setError("Room code must be 6 characters long");
+      return;
+    }
     console.log(`Joining room ${roomCode}`);
     navigation.navigate("WheelOfFortune", { room: roomCode });
   };
@@ -25,24 +31,31 @@ const RoomScreen = ({ navigation }: { navigation: RoomScreenNavigationProp }) =>
       style={{
         display: "flex",
         flexDirection: "column",
+        alignItems: "center",
         justifyContent: "space-between",
         gap: 10,
+        width: "100%",
       }}
     >
-      <Text>RoomScreen</Text>
+      <FormControl isInvalid={!!error} w="75%" maxW="300px">
+        <FormControl.Label>Room Code</FormControl.Label>
+        <Input
+          onChangeText={(text) => {
+            setRoomCode(text);
+          }}
+          placeholder="Enter room name"
+        ></Input>
+        <FormControl.ErrorMessage>{error}</FormControl.ErrorMessage>
+      </FormControl>
 
-      <Text>Join room</Text>
-      <TextInput
-        style={styles.input}
-        onChangeText={(text) => {
-          setRoomCode(text);
-        }}
-        placeholder="Enter room name"
-      ></TextInput>
+      <Button w="75%" maxW="300px" onPress={handleJoinRoom}>
+        Join room
+      </Button>
 
-      <Button onPress={handleJoinRoom} title="Join room"></Button>
-
-      <Button onPress={handleCreateRoom} title="Create room" />
+      <Text>Or</Text>
+      <Button w="75%" maxW="300px" onPress={handleCreateRoom}>
+        Create new Room
+      </Button>
     </View>
   );
 };

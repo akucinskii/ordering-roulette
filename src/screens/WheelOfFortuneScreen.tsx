@@ -1,7 +1,7 @@
 import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useMemo, useState } from "react";
-import { View, TouchableOpacity, Animated, Easing, Text, Share, Alert } from "react-native";
+import { View, Animated, Easing, Text, Share, Alert } from "react-native";
 import { Button, Heading } from "native-base";
 import Svg, { Path, Polygon, Text as SvgText } from "react-native-svg";
 import io from "socket.io-client";
@@ -240,9 +240,7 @@ const WheelOfFortune = ({
           </Svg>
         </Animated.View>
       </View>
-      <TouchableOpacity onPress={startLottery}>
-        <Text>Spin the Wheel</Text>
-      </TouchableOpacity>
+      <Button onPress={startLottery}>Spin the Wheel</Button>
     </View>
   );
 };

@@ -10,7 +10,7 @@ import { getData } from "../utils/storage";
 
 const DEFAULT_SPIN_VALUE = 360 * 3;
 const MESSAGE = "Join room to play the Wheel of Fortune! Copy and paste this code to join: {CODE}";
-const socket = io("http://localhost:3000");
+const socket = io("http://192.168.1.140:3000");
 
 type WheelOfFortuneNavigationProp = NativeStackNavigationProp<RootStackParamList, "Room">;
 
@@ -139,7 +139,9 @@ const WheelOfFortune = ({
   if (showWinner) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Heading>{partitions[whichIndexWon - 1]} is the winner!</Heading>
+        <Heading>
+          <Text>{partitions[whichIndexWon - 1]} is the winner!</Text>
+        </Heading>
       </View>
     );
   }
@@ -172,13 +174,17 @@ const WheelOfFortune = ({
             gap: 10,
           }}
         >
-          <Heading>Room: #{room}</Heading>
+          <Heading>
+            <Text>Room: #{room}</Text>
+          </Heading>
           <Button onPress={onShare} variant="ghost">
             Copy Code
-          </Button>{" "}
+          </Button>
         </View>
         {whichIndexWon === 0 ? (
-          <Heading size="md">Spin the wheel to win a prize!</Heading>
+          <Heading size="md">
+            <Text>Spin the wheel to win a prize!</Text>
+          </Heading>
         ) : (
           showWinner && <Text>{partitions[whichIndexWon - 1]} is the winner!</Text>
         )}

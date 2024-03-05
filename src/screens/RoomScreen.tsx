@@ -27,7 +27,7 @@ const RoomScreen = ({ navigation }: { navigation: RoomScreenNavigationProp }) =>
       const getLotteries = async () => {
         const username = await getData("username");
 
-        fetch(`http://localhost:3000/lotteries/${username}`)
+        fetch(`http://192.168.1.140:3000/lotteries/${username}`)
           .then((response) => response.json())
           .then((data) => {
             setOldLotteries(data);
@@ -36,7 +36,6 @@ const RoomScreen = ({ navigation }: { navigation: RoomScreenNavigationProp }) =>
       getLotteries();
     }, [])
   );
-  console.log("e/");
 
   const handleCreateRoom = () => {
     const code = generateCode();
@@ -87,7 +86,7 @@ const RoomScreen = ({ navigation }: { navigation: RoomScreenNavigationProp }) =>
       <Text>Your previous lotteries:</Text>
       {oldLotteries.map((lottery) => (
         <Text key={lottery.id}>
-          {new Date(lottery.date).toLocaleString()}: {lottery.winner}
+          {new Date(lottery.date).toLocaleString()}- Winner: {lottery.winner}
         </Text>
       ))}
     </View>
